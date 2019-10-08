@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.dutyujm.mapper.VoteMapper" >
+  <resultMap id="BaseResultMap" type="cn.dutyujm.pojo.Vote" >
+    <id column="vid" property="vid" jdbcType="INTEGER" />
+    <result column="title" property="title" jdbcType="VARCHAR" />
+    <result column="description" property="description" jdbcType="VARCHAR" />
+    <result column="StartTime" property="starttime" jdbcType="TIMESTAMP" />
+    <result column="EndTime" property="endtime" jdbcType="TIMESTAMP"/>
+    <result column="type" property="type" jdbcType="INTEGER" />
+    <result column="authorsid" property="authorsid" jdbcType="INTEGER" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    vid, title, description, StartTime, EndTime, type, authorsid
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select
+    <include refid="Base_Column_List" />
+    from vote
+    where vid = #{vid,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    SET FOREIGN_KEY_CHECKS=0;
+    delete from vote
+    where vid = #{vid,jdbcType=INTEGER};
+    delete from uservote
+    where vid = #{vid,jdbcType=INTEGER};
+    delete from voteoptions
+    where vid = #{vid,jdbcType=INTEGER};
+    SET FOREIGN_KEY_CHECKS=1;
+  </delete>
+
+
+    <insert id="multipleChoice">
+
+  insert into uservote(sid,optionid,vid) VALUES
+  <foreach collection="uservoteList" item="item" index="index" separator=",">
+    (#{sid},#{item.optionid},#{item.vid})
+  </foreach>
+  ;
+  <foreach collection="uservoteList" item="item2" index="index" open="" close="" separator=";">
+    update voteoptions
+    <set>
+      sum=sum+1
+    </set>
+    <where>
+      vid=#{item2.vid} AND  optionid =#{item2.optionid}
+    </where>
+
+  </foreach>
+
+</insert>
+
+
+  <select id="findAll" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from vote
+  </select>
+<select id="searchVote" resultType="cn.dutyujm.vo.SearchVoteVo">
+  select * from (
+    select *
+    from (select title, description,IF(uservote.sid = #{sid} , 1, 0) as isVoted,vote.vid,vote.type,vote.EndTime,vote.StartTime,name
+            from vote left join uservote  on vote.vid = uservote.vid left outer join user  on  vote.authorsid = user.sid
+            group by vote.vid)as tmp
+    where   ((title like CONCAT('%',#{title},'%') )or description like CONCAT('%',#{title},'%') )  AND EndTime>now() ) as T
+    limit  #{begin},#{limit}
+</select>
+
+  <!--  单项选择-->
+  <update id="oneChoice" >
+    SET FOREIGN_KEY_CHECKS=0;
+    update voteoptions
+    set sum=sum+1
+    where vid=#{vid} AND  optionid = #{optionid}  ;
+    insert into uservote
+     (vid,optionid,sid)
+    VALUES (#{vid} , #{optionid},#{sid});
+     SET FOREIGN_KEY_CHECKS=1;
+  </update>
+
+<!--  <select id="" resultMap="BaseResultMap">-->
+<!--    select-->
+<!--    <include refid="Base_Column_List" />-->
+<!--    from vote-->
+<!--  </select>-->
+  <!--这个是查询我的发布的语句-->
+  <select id="selectMyVote" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+    select *
+    from vote
+    where authorsid = #{authorsid,jdbcType=INTEGER};
+  </select>
+
+<select id="viewDetail" resultType="cn.dutyujm.vo.ViewDetailVo" parameterType="java.lang.Integer">
+  select *
+  from vote  join voteoptions v on vote.vid = v.vid and v.optionid=v.optionid
+  where  vote.vid = #{vid,jdbcType=INTEGER};
+</select>
+
+<!--这个是查询的语句-->
+<!--  select vote.title, vote.description,IF(sid = 201752016, 1, 0),vote.vid-->
+<!--  from vote left join uservote u on vote.vid = u.vid-->
+<!--  group by vote.vid-->
+
+<!--这个是点进去详情的-->
+<!--  select *-->
+<!--  from vote join uservote u on vote.vid = u.vid-->
+<!--  where sid = 201752016 and vote.vid = 5;-->
+
+<!--模糊查询并且返回你是否选课的-->
+<!--  select * from (-->
+<!--  select *-->
+<!--  from (select vote.title, vote.description,IF(sid = 201752016, 1, 0),vote.vid,vote.type-->
+<!--  from vote left join uservote u on vote.vid = u.vid-->
+<!--  group by vote.vid)as tmp-->
+<!--  where   (title like CONCAT('%我%') )or description like CONCAT('%我%') ) as T-->
+<!--  limit 0, 10-->
+
+  <insert id="insert" parameterType="cn.dutyujm.pojo.Vote" >
+    <selectKey keyProperty="vid" order="AFTER" resultType="java.lang.Integer">
+      select LAST_INSERT_ID()
+    </selectKey>
+    insert into vote ( title, description,
+      StartTime, EndTime, type,
+      authorsid)
+    values ( #{title,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR},
+      #{starttime,jdbcType=TIMESTAMP}, #{endtime,jdbcType=TIMESTAMP}, #{type,jdbcType=INTEGER},
+      #{authorsid,jdbcType=INTEGER})
+  </insert>
+
+  <insert id="insertSelective" parameterType="cn.dutyujm.pojo.Vote" >
+    insert into vote
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="vid != null" >
+        vid,
+      </if>
+      <if test="title != null" >
+        title,
+      </if>
+      <if test="description != null" >
+        description,
+      </if>
+      <if test="starttime != null" >
+        StartTime,
+      </if>
+      <if test="endtime != null" >
+        EndTime,
+      </if>
+      <if test="type != null" >
+        type,
+      </if>
+      <if test="authorsid != null" >
+        authorsid,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="vid != null" >
+        #{vid,jdbcType=INTEGER},
+      </if>
+      <if test="title != null" >
+        #{title,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="starttime != null" >
+        #{starttime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endtime != null" >
+        #{endtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="type != null" >
+        #{type,jdbcType=INTEGER},
+      </if>
+      <if test="authorsid != null" >
+        #{authorsid,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="cn.dutyujm.pojo.Vote" >
+    update vote
+    <set >
+      <if test="title != null" >
+        title = #{title,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null" >
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="starttime != null" >
+        StartTime = #{starttime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endtime != null" >
+        EndTime = #{endtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="type != null" >
+        type = #{type,jdbcType=INTEGER},
+      </if>
+      <if test="authorsid != null" >
+        authorsid = #{authorsid,jdbcType=INTEGER},
+      </if>
+    </set>
+    where vid = #{vid,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="cn.dutyujm.pojo.Vote" >
+    update vote
+    set title = #{title,jdbcType=VARCHAR},
+      description = #{description,jdbcType=VARCHAR},
+      StartTime = #{starttime,jdbcType=TIMESTAMP},
+      EndTime = #{endtime,jdbcType=TIMESTAMP},
+      type = #{type,jdbcType=INTEGER},
+      authorsid = #{authorsid,jdbcType=INTEGER}
+    where vid = #{vid,jdbcType=INTEGER}
+  </update>
+</mapper>

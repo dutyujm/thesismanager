@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.dutyujm.mapper.TitleMapper">
+
+  <resultMap id="BaseResultMap" type="cn.dutyujm.pojo.Title">
+    <id column="title_id" jdbcType="INTEGER" property="titleId" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <collection column="title_id" ofType="cn.dutyujm.pojo.Teacher" property="teachers" select="cn.dutyujm.mapper.TeacherMapper.getTeachers">
+      <id column="tid" jdbcType="INTEGER" property="tid" />
+      <result column="tno" jdbcType="INTEGER" property="tno" />
+      <result column="password" jdbcType="VARCHAR" property="password" />
+      <result column="teachername" jdbcType="VARCHAR" property="name" />
+      <result column="title_id" jdbcType="INTEGER" property="titleId" />
+      <result column="count" jdbcType="INTEGER" property="count" />
+    </collection>
+
+
+  </resultMap>
+  <sql id="Base_Column_List">
+    title_id, name
+  </sql>
+  
+  <select id="getTitleAndTeachers" resultMap="BaseResultMap">
+    select *
+    from title
+  </select>
+
+  <select id="getTeachers">
+    select teahcer.name as teachername,teacher.tid
+    from title join teacher on title.title_id = teacher.title_id
+    where title.title_id= #{title_id}
+  </select>
+
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from title
+    where title_id = #{titleId,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from title
+    where title_id = #{titleId,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="cn.dutyujm.pojo.Title">
+    insert into title (title_id, name)
+    values (#{titleId,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="cn.dutyujm.pojo.Title">
+    insert into title
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="titleId != null">
+        title_id,
+      </if>
+      <if test="name != null">
+        name,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="titleId != null">
+        #{titleId,jdbcType=INTEGER},
+      </if>
+      <if test="name != null">
+        #{name,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="cn.dutyujm.pojo.Title">
+    update title
+    <set>
+      <if test="name != null">
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where title_id = #{titleId,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="cn.dutyujm.pojo.Title">
+    update title
+    set name = #{name,jdbcType=VARCHAR}
+    where title_id = #{titleId,jdbcType=INTEGER}
+  </update>
+</mapper>

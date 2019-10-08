@@ -1,0 +1,21 @@
+spring:
+profiles: master
+application:
+  name: eureka-server
+server:
+  port: 8761
+    # 关闭保护机制，默认true
+  enable-self-preservation: false
+    # 剔除失效服务间隔，默认60000
+  eviction-interval-timer-in-ms: 2000
+
+eureka:
+  instance:
+    hostname: master
+    prefer-ip-address: true
+  client:
+    fetch-registry: true
+    register-with-eureka: false
+    serviceUrl:
+      defaultZone: http://slaveone:8762/eureka/,http://localhost:8763/eureka/
+
